@@ -134,3 +134,34 @@ function create_click_target() {
     };
     game_screen.appendChild(target);
 }
+
+function create_hold_target() {
+    var size = parseInt(target_size_select.value);
+    var pos = get_random_position({w: size, h: size});
+    var target = document.createElement('div');
+    target.className = 'target hold';
+    target.style.width = size + 'px';
+    target.style.height = size + 'px';
+    target.style.lineHeight = size + 'px';
+    target.style.left = pos.x + 'px';
+    target.style.top = pos.y + 'px';
+    target.textContent = 'hold';
+    target.onmousedown = function(event) {
+        event.stopPropagation();
+        if (is_holding) return;
+        is_holding = true;
+        target.classList.add('holding');
+        reaction_times.push(Date.now() - target_appear_time);
+        current_tremor_samples = []; // reset tremor samples for this hold
+        hold_timer = setTimeout(function() { // success timer
+            if (!is_holding) return;
+            is_holding = false;
+            record_hit();
+            var avg_tremor = current_tremor_samples.length > 0 ? current_tremor_samples.reduce(function(a,b){return a+b;},0) / current_tremor_samples.length : 0;
+            tremor_data.push(avg_tremor);
+            target.remove();
+            spawn_target();
+        }, parseInt(difficulty_select.value));
+    };
+    game_screen.appendChild(target);
+}

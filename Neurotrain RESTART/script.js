@@ -33,3 +33,104 @@ var drag_mouse_path = [];
 // metric variables
 var hits, misses;
 var reaction_times, tremor_data, accuracy_history, drag_efficiencies;
+
+// simplified persistent mouse listeners
+document.onmousemove = handle_mouse_move;
+document.onmouseup = handle_mouse_up;
+
+// local storage for session history
+var sessions_history = JSON.parse(localStorage.getItem('neurotrain_history')) || [];
+
+// core functions
+
+function show_screen(screen_element) {
+    menu_screen.style.display = 'none';
+    game_screen.style.display = 'none';
+    results_screen.style.display = 'none';
+    history_screen.style.display = 'none';
+    screen_element.style.display = 'flex';
+}
+
+function start_game() {
+    // reset all metrics for the new session
+    hits = 0;
+    misses = 0;
+    reaction_times = [];
+    tremor_data = [];
+    accuracy_history = [];
+    drag_efficiencies = [];
+    game_active = true;
+
+    show_screen(game_screen);
+
+    var end_time = Date.now() + 30000;
+    countdown_interval = setInterval(function() {
+        var time_left = Math.max(0, (end_time - Date.now()) / 1000);
+        timer_display.textContent = time_left.toFixed(1);
+    }, 100);
+
+    setTimeout(end_game, 30000);
+    spawn_target();
+}
+
+function end_game() {
+    if (!game_active) return; // prevent running twice
+    game_active = false;
+    clearInterval(countdown_interval);
+
+    var active_targets = game_screen.querySelectorAll('.target, .drag-obj, .drag-zone');
+    active_targets.forEach(function(t) { t.remove(); });
+
+    var session_data = {
+        timestamp: Date.now(),
+        hits: hits,
+        misses: misses,
+        reaction_times: reaction_times,
+        tremor_data: tremor_data,
+        accuracy_history: accuracy_history,
+        drag_efficiencies: drag_efficiencies
+    };
+    sessions_history.push(session_data);
+    localStorage.setItem('neurotrain_history', JSON.stringify(sessions_history));
+
+    display_results(session_data);
+    show_screen(results_screen);
+}
+
+function spawn_target() {
+    if (!game_active) return;
+
+    setTimeout(function() {
+        if (!game_active) return;
+        var target_type = Math.random();
+
+        if (target_type < 0.5) create_click_target();
+        else if (target_type < 0.8) create_hold_target();
+        else create_drag_target();
+
+        target_appear_time = Date.now();
+    }, Math.random() * 800 + 400);
+}
+
+// target creation functions
+
+function create_click_target() {
+    var size = parseInt(target_size_select.value);
+    var pos = get_random_position({w: size, h: size});
+    var target = document.createElement('div');
+    target.className = 'target';
+    target.style.width = size + 'px';
+    target.style.height = size + 'px';
+    target.style.lineHeight = size + 'px';
+    target.style.left = pos.x + 'px';
+    target.style.top = pos.y + 'px';
+    target.textContent = 'click';
+    target.onclick = function(event) {
+        event.stopPropagation();
+        record_hit();
+        reaction_times.push(Date.now() - target_appear_time);
+        target.remove();
+        spawn_target();
+    };
+    game_screen.appendChild(target);
+}

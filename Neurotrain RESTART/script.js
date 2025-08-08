@@ -256,3 +256,97 @@ function handle_mouse_up() {
         spawn_target();
     }
 }
+
+game_screen.onclick = function() {
+    // This event handler catches clicks on the game background.
+    // Clicks on targets themselves are stopped and don't trigger this.
+    // We only count a miss if there was a 'click' target on the screen that was missed.
+    var click_target = game_screen.querySelector('.target:not(.hold)');
+    if (game_active && click_target) {
+        record_miss();
+        click_target.remove(); // remove the missed target
+        spawn_target();      // move on to the next target
+    }
+};
+
+// metric and feedback functions
+
+function record_hit() {
+    hits++;
+    give_feedback(true);
+    update_accuracy_history();
+}
+
+function record_miss() {
+    misses++;
+    give_feedback(false);
+    update_accuracy_history();
+}
+
+function update_accuracy_history() {
+    var current_accuracy = (hits + misses > 0) ? (hits / (hits + misses)) * 100 : 0;
+    accuracy_history.push(current_accuracy);
+}
+
+function give_feedback(is_hit) {
+    var feedback_div = document.createElement('div');
+    feedback_div.className = is_hit ? 'feedback hit-feedback' : 'feedback miss-feedback';
+    game_screen.appendChild(feedback_div);
+    setTimeout(function() { if(feedback_div) feedback_div.remove(); }, 300);
+}
+
+function get_random_position(element_size) {
+    var rect = game_screen.getBoundingClientRect();
+    var buffer = 10;
+    return {
+        x: Math.random() * (rect.width - element_size.w - buffer * 2) + buffer,
+        y: Math.random() * (rect.height - element_size.h - buffer * 2) + buffer
+    };
+}
+
+// display functions
+
+function display_results(data) {
+    var final_accuracy = (data.hits + data.misses > 0) ? (data.hits / (data.hits + data.misses)) * 100 : 0;
+    var avg_reaction = data.reaction_times.length > 0 ? data.reaction_times.reduce(function(a, b) { return a + b; }, 0) / data.reaction_times.length : 0;
+    var avg_tremor = data.tremor_data.length > 0 ? data.tremor_data.reduce(function(a, b) { return a + b; }, 0) / data.tremor_data.length : 0;
+    var avg_drag = data.drag_efficiencies.length > 0 ? (data.drag_efficiencies.reduce(function(a, b) { return a + b; }, 0) / data.drag_efficiencies.length) * 100 : 0;
+    
+    document.getElementById('res-hits').textContent = data.hits;
+    document.getElementById('res-misses').textContent = data.misses;
+    document.getElementById('res-accuracy').textContent = final_accuracy.toFixed(1) + '%';
+    document.getElementById('res-reaction').textContent = avg_reaction.toFixed(0) + ' ms';
+    document.getElementById('res-tremor').textContent = avg_tremor.toFixed(2) + ' px';
+    document.getElementById('res-drag').textContent = avg_drag.toFixed(1) + '%';
+    
+    var tips = '';
+    if (final_accuracy < 75) tips += '<li>focus on precision over speed. consider using a larger target size.</li>';
+    if (avg_reaction > 600) tips += '<li>practice quick, decisive clicks. anticipating the target\'s appearance can help.</li>';
+    if (avg_drag > 0 && avg_drag < 70) tips += '<li>for drag targets, try to make your movements in a single, smooth line.</li>';
+    if (tips === '') tips = '<li>great work! consistent practice is key to improvement.</li>';
+    document.getElementById('res-feedback').innerHTML = '<h3>Drills & Tips</h3><ul>' + tips + '</ul>';
+
+    draw_line_chart(document.getElementById('res-accuracy-chart'), data.accuracy_history, '%');
+    draw_line_chart(document.getElementById('res-reaction-chart'), data.reaction_times, 'ms');
+    draw_line_chart(document.getElementById('res-tremor-chart'), data.tremor_data, 'px');
+    draw_bar_chart(document.getElementById('res-drag-chart'), data.drag_efficiencies.map(function(d){ return d*100; }), '%');
+}
+
+function show_history_screen() {
+    history_list_div.innerHTML = '';
+    selected_session_div.style.display = 'none';
+
+    if (sessions_history.length === 0) {
+        history_list_div.innerHTML = '<p>no past sessions found.</p>';
+    } else {
+        var reversed_history = sessions_history.slice().reverse();
+        reversed_history.forEach(function(session) {
+            var item = document.createElement('div');
+            item.className = 'history-item';
+            item.textContent = new Date(session.timestamp).toLocaleString();
+            item.onclick = function() { display_history_details(session); };
+            history_list_div.appendChild(item);
+        });
+    }
+    show_screen(history_screen);
+}

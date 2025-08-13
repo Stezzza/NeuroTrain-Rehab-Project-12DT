@@ -350,3 +350,88 @@ function show_history_screen() {
     }
     show_screen(history_screen);
 }
+
+function display_history_details(data) {
+    var final_accuracy = (data.hits + data.misses > 0) ? (data.hits / (data.hits + data.misses)) * 100 : 0;
+    var avg_reaction = data.reaction_times.length > 0 ? data.reaction_times.reduce(function(a, b) { return a + b; }, 0) / data.reaction_times.length : 0;
+    var avg_tremor = data.tremor_data.length > 0 ? data.tremor_data.reduce(function(a, b) { return a + b; }, 0) / data.tremor_data.length : 0;
+    var avg_drag = data.drag_efficiencies.length > 0 ? (data.drag_efficiencies.reduce(function(a, b) { return a + b; }, 0) / data.drag_efficiencies.length) * 100 : 0;
+    
+    selected_session_div.innerHTML = '<hr style="margin: 20px 0;"><h3>Session Details</h3>' +
+        '<div class="results-grid">' +
+            '<p>Hits: <span>' + data.hits + '</span></p><p>Avg. Reaction: <span>' + avg_reaction.toFixed(0) + ' ms</span></p>' +
+            '<p>Misses: <span>' + data.misses + '</span></p><p>Avg. Tremor: <span>' + avg_tremor.toFixed(2) + ' px</span></p>' +
+            '<p>Accuracy: <span>' + final_accuracy.toFixed(1) + '%</span></p><p>Avg. Drag Efficiency: <span>' + avg_drag.toFixed(1) + '%</span></p>' +
+        '</div><div class="chart-grid">' +
+            '<div class="chart-container"><h3>Accuracy</h3><canvas id="hist-accuracy-chart"></canvas></div>' +
+            '<div class="chart-container"><h3>Reaction Time</h3><canvas id="hist-reaction-chart"></canvas></div>' +
+            '<div class="chart-container"><h3>Tremor Stability</h3><canvas id="hist-tremor-chart"></canvas></div>' +
+            '<div class="chart-container"><h3>Drag Efficiency</h3><canvas id="hist-drag-chart"></canvas></div>' +
+        '</div>';
+
+    selected_session_div.style.display = 'block';
+    draw_line_chart(document.getElementById('hist-accuracy-chart'), data.accuracy_history, '%');
+    draw_line_chart(document.getElementById('hist-reaction-chart'), data.reaction_times, 'ms');
+    draw_line_chart(document.getElementById('hist-tremor-chart'), data.tremor_data, 'px');
+    draw_bar_chart(document.getElementById('hist-drag-chart'), data.drag_efficiencies.map(function(d){ return d*100; }), '%');
+}
+
+// chart drawing functions
+
+function draw_line_chart(canvas, data, unit) {
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width = 350; var h = canvas.height = 200; var pad = 30;
+    ctx.clearRect(0, 0, w, h);
+    
+    if (!data || data.length === 0) {
+        ctx.font = "14px Arial"; ctx.fillStyle = "#888"; ctx.textAlign = "center";
+        ctx.fillText("No data for this metric.", w / 2, h / 2); return;
+    }
+
+    var max_val = Math.max.apply(null, data); if (max_val < 100 && unit === '%') max_val = 100;
+    if (max_val === 0) max_val = 100;
+
+    ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h - pad); ctx.lineTo(w - pad, h - pad);
+    ctx.strokeStyle = '#aaa'; ctx.stroke();
+
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#333'; ctx.font = '10px Arial';
+    ctx.fillText(max_val.toFixed(0), pad - 5, pad);
+    ctx.fillText('0', pad - 5, h - pad);
+    
+    ctx.beginPath(); ctx.strokeStyle = '#007bff'; ctx.lineWidth = 2;
+    data.forEach(function(p, i) {
+        var x = pad + (i / (data.length - 1 || 1)) * (w - 2 * pad);
+        var y = h - pad - (p / max_val) * (h - 2 * pad);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+}
+
+function draw_bar_chart(canvas, data, unit) {
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width = 350; var h = canvas.height = 200; var pad = 30;
+    ctx.clearRect(0, 0, w, h);
+
+    if (!data || data.length === 0) {
+        ctx.font = "14px Arial"; ctx.fillStyle = "#888"; ctx.textAlign = "center";
+        ctx.fillText("No data for this metric.", w / 2, h / 2); return;
+    }
+
+    var max_val = 100; // Efficiency is always 0-100%
+
+    ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h - pad); ctx.lineTo(w - pad, h - pad);
+    ctx.strokeStyle = '#aaa'; ctx.stroke();
+
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#333'; ctx.font = '10px Arial';
+    ctx.fillText(max_val.toFixed(0), pad - 5, pad);
+    ctx.fillText('0', pad - 5, h - pad);
+
+    var bar_width = (w - 2 * pad) / (data.length * 1.5);
+    ctx.fillStyle = '#28a745';
+    data.forEach(function(p, i) {
+        var bar_height = (p / max_val) * (h - 2 * pad);
+        var x = pad + i * (bar_width * 1.5);
+        var y = h - pad - bar_height;
+        ctx.fillRect(x, y, bar_width, bar_height);
+    });
+}

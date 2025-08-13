@@ -2,24 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content=""width=device-width, initial-scale="1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NeuroTrain</title>
-    <link rel="stylesheet" href ="style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="container">
+
         <div id="menu-screen" class="screen">
             <div class="scrollable-content">
                 <h1>NeuroTrain</h1>
-                <p>A powerful rehabilitation tool to improve motor control and reaction time in a digital world.</p>
-                <div style ="display: flex; justify-content: center;">
-                </div class="settings-grid"><label for="target-size">Target SizeL</label>
-                <select id="target-size">
-                :</label>
-                <select id="target-size">
-                    <option value="60">Small</option>
-                    <option value="80" selected>Medium</option>
+                <p>a gentle tool to improve motor control and reaction time.</p>
+                <div style="display: flex; justify-content: center;">
+                    <div class="settings-grid">
+                        <label for="target-size">Target Size:</label>
+                        <select id="target-size">
+                            <option value="60">Small</option>
+                            <option value="80" selected>Medium</option>
                             <option value="100">Large</option>
                         </select>
                         <label for="difficulty">Difficulty:</label>
@@ -30,10 +30,10 @@
                         </select>
                     </div>
                 </div>
-                <button id="start-button" class="button">StartSession</button
-                    <button id="history-button" class="button" style=""background-color: #6c757d;">View History</button>
-                    <div class="target-explainer">
-                    </div><h3>Click Target</h3><div class="explainer-box"></div class="target-example">Click</div></div><p>improves reaction time and single-point accuracy.</p></div>
+                <button id="start-button" class="button">Start Session</button>
+                <button id="history-button" class="button" style="background-color: #6c757d;">View History</button>
+                <div class="target-explainer">
+                    <div><h3>Click Target</h3><div class="explainer-box"><div class="target-example">Click</div></div><p>improves reaction time and single-point accuracy.</p></div>
                     <div><h3>Hold Target</h3><div class="explainer-box"><div class="target-example hold">Hold</div></div><p>measures tremor and stability during a sustained action.</p></div>
                     <div><h3>Drag Target</h3><div class="explainer-box"><div class="target-example drag-obj">Drag</div><div class="target-example drag-zone"></div></div><p>trains smooth, coordinated movements.</p></div>
                 </div>
@@ -54,10 +54,30 @@
                     <p>Avg. Tremor: <span id="res-tremor"></span></p>
                     <p>Accuracy: <span id="res-accuracy"></span></p>
                     <p>Avg. Drag Efficiency: <span id="res-drag"></span></p>
-
-
-                </select>
+                </div>
+                <div id="res-feedback" class="feedback-tips"></div>
+                <div class="chart-grid">
+                    <div class="chart-container"><h3>Accuracy Over Time</h3><canvas id="res-accuracy-chart"></canvas></div>
+                    <div class="chart-container"><h3>Reaction Time (per hit)</h3><canvas id="res-reaction-chart"></canvas></div>
+                    <div class="chart-container"><h3>Tremor (per hold)</h3><canvas id="res-tremor-chart"></canvas></div>
+                    <div class="chart-container"><h3>Drag Efficiency (per drag)</h3><canvas id="res-drag-chart"></canvas></div>
+                </div>
+                <button id="res-restart-button" class="button">Return to Menu</button>
             </div>
         </div>
+
+        <div id="history-screen" class="screen">
+            <div class="scrollable-content">
+                <h2>Session History</h2>
+                <div id="history-list"></div>
+                <div id="selected-session-view" style="display: none;"></div>
+                <button id="back-to-menu-button" class="button">Back to Menu</button>
+            </div>
+        </div>
+
     </div>
+
+    <script src="script.js"></script>
+
 </body>
+</html>
